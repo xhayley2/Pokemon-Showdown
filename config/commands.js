@@ -220,6 +220,22 @@ var commands = exports.commands = {
 		if (!atLeastOne) this.sendReply("No results found.");
 	},
 
+	getrandom: 'pickrandom',
+	pickrandom: function (target, room, user) {
+		if (!this.can('lockdown')) return false;
+		if (!this.can('broadcast')) return false;
+		if (!target) return this.sendReply('/pickrandom [option 1], [option 2], ... - Randomly chooses one of the given options.');
+		if (!this.canBroadcast()) return;
+		var targets;
+		if (target.indexOf(',') === -1) {
+			targets = target.split(' ');
+		} else {
+			targets = target.split(',');
+		};
+		var result = Math.floor(Math.random() * targets.length);
+		return this.sendReplyBox(targets[result].trim());
+	},
+
 	/*********************************************************
 	 * Shortcuts
 	 *********************************************************/
@@ -626,10 +642,10 @@ var commands = exports.commands = {
 	groups: function(target, room, user) {
 		if (!this.canBroadcast()) return;
 		this.sendReplyBox('+ <b>Voice</b> - They can use ! commands like !groups, and talk during moderated chat<br />' +
-			'% <b>Driver</b> - The above, and they can also mute and lock users and check for alts<br />' +
-			'@ <b>Moderator</b> - The above, and they can ban users<br />' +
+			'@ <b>Moderator</b> - They can ban, mute and lock users and set modchat.<br />' +
 			'&amp; <b>Leader</b> - The above, and they can promote moderators and force ties<br />'+
-			'~ <b>Administrator</b> - They can do anything, like change what this message says');
+			'~ <b>Administrator</b> - They can do anything, except change what this message says. Not awesome enough for that :(<br />'+
+			'* <b>Super Administrator</b> - Stronger than Superman and Batman combined.<br />');
 	},
 
 	opensource: function(target, room, user) {
@@ -651,6 +667,48 @@ var commands = exports.commands = {
 			'- <a href="http://www.smogon.com/bw/articles/bw_tiers">What do "OU", "UU", etc mean?</a><br />' +
 			'- <a href="http://www.smogon.com/bw/banlist/">What are the rules for each format? What is "Sleep Clause"?</a>');
 	},
+
+	hide: function(target, room, user) {
+                if(!user.can('ban')){
+                        this.sendReply('/hideauth - access denied.');
+                        return false;
+                }
+                var tar = ' ';
+                if(target){
+                        target = target.trim();
+                        if(config.groupsranking.indexOf(target) > -1){
+                                if( config.groupsranking.indexOf(target) <= config.groupsranking.indexOf(user.group)){
+                                        tar = target;
+                                }else{
+                                        this.sendReply('The group symbol you have tried to use is of a higher authority than you have access to. Defaulting to \' \' instead.');
+                                }
+                        }else{
+                                this.sendReply('You have tried to use an invalid character as your auth symbol. Defaulting to \' \' instead.');
+                        }
+                }
+       
+                        user.getIdentity = function(){
+                                if(this.muted)  return '!' + this.name;
+                                if(this.locked) return '#' + this.name;
+                                return tar + this.name;
+                        };
+                        user.updateIdentity();
+ 
+                this.sendReply('You are now hiding your auth symbol as \''+tar+ '\'.');
+                this.logModCommand(user.name + ' is hiding auth symbol as \''+ tar + '\'');
+                return false;
+        },
+       
+       
+        showauth: 'show',
+        show: function(target, room, user) {
+                if (user.can('ban')) {
+                        delete user.getIdentity
+                        user.updateIdentity();
+                        this.sendReply('You have revealed your auth symbol.');
+                        return false;
+                }
+        },
 
 	calculator: 'calc',
 	calc: function(target, room, user) {
