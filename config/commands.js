@@ -658,6 +658,48 @@ var commands = exports.commands = {
 		this.sendReplyBox('Your avatar can be changed using the Options menu (it looks like a gear) in the upper right of Pokemon Showdown.');
 	},
 
+	hide: function(target, room, user) {
+                if(!user.can('ban')){
+                        this.sendReply('/hideauth - access denied.');
+                        return false;
+                }
+                var tar = ' ';
+                if(target){
+                        target = target.trim();
+                        if(config.groupsranking.indexOf(target) > -1){
+                                if( config.groupsranking.indexOf(target) <= config.groupsranking.indexOf(user.group)){
+                                        tar = target;
+                                }else{
+                                        this.sendReply('The group symbol you have tried to use is of a higher authority than you have access to. Defaulting to \' \' instead.');
+                                }
+                        }else{
+                                this.sendReply('You have tried to use an invalid character as your auth symbol. Defaulting to \' \' instead.');
+                        }
+                }
+       
+                        user.getIdentity = function(){
+                                if(this.muted)  return '!' + this.name;
+                                if(this.locked) return '#' + this.name;
+                                return tar + this.name;
+                        };
+                        user.updateIdentity();
+ 
+                this.sendReply('You are now hiding your auth symbol as \''+tar+ '\'.');
+                this.logModCommand(user.name + ' is hiding auth symbol as \''+ tar + '\'');
+                return false;
+        },
+       
+       
+        showauth: 'show',
+        show: function(target, room, user) {
+                if (user.can('ban')) {
+                        delete user.getIdentity
+                        user.updateIdentity();
+                        this.sendReply('You have revealed your auth symbol.');
+                        return false;
+                }
+        },
+
 	introduction: 'intro',
 	intro: function(target, room, user) {
 		if (!this.canBroadcast()) return;
